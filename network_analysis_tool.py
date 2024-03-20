@@ -2,7 +2,7 @@ import scapy.all as scapy
 import socket
 import gps_locator
 import requests
-from scapy.layers.inet import IP, TCP, UDP
+from scapy.layers.inet import IP, ICMP
 from scapy.layers.l2 import ARP
 
 def scan_network(ip_range):
@@ -52,6 +52,17 @@ def port_scanning(ip_range, port_range):
             sock.close()
     return open_ports
 
+def identify_device(device_ip):
+    # Add specific checks to identify phones or CCTV cameras
+    # For example, you can check the MAC address vendor or specific open ports
+    # If the device meets the criteria, classify it as a phone or CCTV camera
+    if device_ip.startswith("192.168.1"):  # Example IP range for phones
+        return "Phone"
+    elif device_ip.startswith("192.168.2"):  # Example IP range for CCTV cameras
+        return "CCTV Camera"
+    else:
+        return "Unknown"
+
 def vulnerability_scanning(hosts):
     print("[+] Performing vulnerability scanning for active hosts...")
     vulnerabilities = {}
@@ -69,7 +80,7 @@ def continuous_monitoring(ip_range):
     pass
 
 # Example usage:
-ip_range = ["192.168.1.1", "192.168.1.2", "192.168.1.3"]
+ip_range = ["192.168.1.1", "192.168.1.2", "192.168.1.3", "192.168.2.1", "192.168.2.2"]
 port_range = range(1, 1025)
 
 active_hosts = scan_network(ip_range)
@@ -84,6 +95,9 @@ for host in active_hosts:
 
     geo_info = geoip_lookup(host)
     print("GeoIP Info:", geo_info)
+
+    device_type = identify_device(host)
+    print(f"Device Type for {host}: {device_type}")
 
 open_ports = port_scanning(ip_range, port_range)
 print("Open Ports:", open_ports)
