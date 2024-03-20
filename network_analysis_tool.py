@@ -1,5 +1,6 @@
 import scapy.all as scapy
 import socket
+import gps_locator
 import requests
 from scapy.layers.inet import IP, TCP, UDP
 from scapy.layers.l2 import ARP
