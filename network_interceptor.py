@@ -1,55 +1,37 @@
-import os
-import sys
-import socket
-import threading
-import logging
-from scapy.all import *
+import scapy.all as scapy
+from datetime import datetime
 
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
+def log_packet(packet):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if packet.haslayer(scapy.IP):
+        ip_src = packet[scapy.IP].src
+        ip_dst = packet[scapy.IP].dst
+        if packet.haslayer(scapy.TCP):
+            protocol = "TCP"
+            src_port = packet[scapy.TCP].sport
+            dst_port = packet[scapy.TCP].dport
+            payload = str(packet[scapy.TCP].payload)
+        elif packet.haslayer(scapy.UDP):
+            protocol = "UDP"
+            src_port = packet[scapy.UDP].sport
+            dst_port = packet[scapy.UDP].dport
+            payload = str(packet[scapy.UDP].payload)
+        else:
+            protocol = "Other"
+            src_port = None
+            dst_port = None
+            payload = None
+        log_message = f"[{timestamp}] {protocol} packet: {ip_src}:{src_port} --> {ip_dst}:{dst_port}\nPayload: {payload}"
+        with open("intercepted_packets.log", "a") as logfile:
+            logfile.write(log_message + "\n\n")
+        print(log_message)
 
-# Function to intercept and modify packets
-def intercept_packet(packet):
-    # Modify the packet as needed
-    # For example, you can inspect and modify packet headers, payloads, etc.
-    # Here, we just print the packet's summary
-    print(packet.summary())
-
-# Function to intercept and modify incoming packets
-def intercept_incoming_packets():
-    # Create a sniffing thread to intercept incoming packets
-    sniff(filter="", prn=intercept_packet, store=0)
-
-# Function to intercept and modify outgoing packets
-def intercept_outgoing_packets():
-    # Create a socket to intercept outgoing packets
+def intercept():
+    print("[+] Starting interceptor...")
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
-        s.bind(('', 0))
-        s.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
-    except OSError as e:
-        print("Error creating raw socket:", e)
-        sys.exit(1)
-
-    # Intercept outgoing packets and call the intercept_packet function
-    while True:
-        packet, _ = s.recvfrom(65565)
-        intercept_packet(IP(packet))
-
-# Main function to start interception
-def start_interception():
-    # Start a thread to intercept incoming packets
-    incoming_thread = threading.Thread(target=intercept_incoming_packets)
-    incoming_thread.daemon = True
-    incoming_thread.start()
-
-    # Start intercepting outgoing packets
-    intercept_outgoing_packets()
+        scapy.sniff(prn=log_packet, store=0)
+    except KeyboardInterrupt:
+        print("\n[+] Stopping interceptor...")
 
 if __name__ == "__main__":
-    # Ensure script is run as root
-    if os.geteuid() != 0:
-        print("This script must be run as root to intercept network traffic.")
-        sys.exit(1)
-
-    # Start interception
-    start_interception()
+    intercept()
