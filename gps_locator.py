@@ -69,9 +69,3 @@ def main():
             print(f"GPS coordinates: Latitude {latitude}, Longitude {longitude}")
         else:
             print("Failed to retrieve GPS coordinates.")
-        delay = adaptive_delay()
-        print(f"Delaying next request for {delay} seconds...")
-        time.sleep(delay)
-
-if __name__ == "__main__":
-    main()
